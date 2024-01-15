@@ -1,0 +1,10 @@
+# MongoDB configuration
+spring:
+  data:
+    mongodb:
+      uri: mongodb+srv://lusinekenneth2:Prilu0397@cluster0.pwbjerw.mongodb.net/ExpenseTracker?retryWrites=true&w=majority
+
+# Server configuration
+server:
+  port: 8080
+
