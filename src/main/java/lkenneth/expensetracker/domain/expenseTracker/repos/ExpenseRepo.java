@@ -7,5 +7,5 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import java.util.List;
 
 public interface ExpenseRepo  extends MongoRepository<Expense, String> {
-    List<Expense> findAllByOrderByDateDesc();
+    List<Expense> findExpensesByCategory(String category);
 }
