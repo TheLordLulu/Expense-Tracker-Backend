@@ -3,7 +3,13 @@ package lkenneth.expensetracker.domain.expenseTracker.controllers;
 import lkenneth.expensetracker.domain.core.exceptions.ResourceCreationException;
 import lkenneth.expensetracker.domain.core.exceptions.ResourceNotFoundException;
 import lkenneth.expensetracker.domain.expenseTracker.models.Expense;
+
+import lkenneth.expensetracker.domain.expenseTracker.models.User;
 import lkenneth.expensetracker.domain.expenseTracker.services.ExpenseService;
+
+import lkenneth.expensetracker.domain.expenseTracker.services.UserService;
+import lkenneth.expensetracker.domain.expenseTracker.services.UserServiceImpl;
+import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,61 +22,67 @@ import java.util.List;
 @RequestMapping("/api/v1/expenses")
 public class ExpenseController {
     private final ExpenseService expenseService;
+    private final UserService userService;
 
     @Autowired
-    public ExpenseController(ExpenseService expenseService) {
+    public ExpenseController(ExpenseService expenseService, UserServiceImpl userService) {
         this.expenseService = expenseService;
+        this.userService = userService;
     }
 
-    @GetMapping
-    public ResponseEntity<List<Expense>> getAll() {
-        List<Expense> expenses = expenseService.getAll();
-        return new ResponseEntity<>(expenses, HttpStatus.OK);
-    }
 
     @PostMapping
-    public ResponseEntity<Expense> create(@RequestBody Expense expense) {
-        try {
-            expense = expenseService.create(expense);
-            return new ResponseEntity<>(expense, HttpStatus.CREATED);
-        } catch (ResourceCreationException e) {
-            // Handle resource creation exception
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+    public ResponseEntity<Expense> createExpense(@RequestBody Expense expense, @RequestParam String userId) {
+        User user = userService.getUserById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        Expense createdExpense = expenseService.create(expense, user);
+        return ResponseEntity.ok(createdExpense);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Expense> getById(@PathVariable String id) {
-        try {
-            Expense expense = expenseService.getById(id);
-            return new ResponseEntity<>(expense, HttpStatus.OK);
-        } catch (ResourceNotFoundException e) {
-            // Handle resource not found exception
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+    @GetMapping("/{expenseId}")
+    public ResponseEntity<Expense> getExpenseById(@PathVariable String expenseId, @RequestParam String userId) {
+        User user = userService.getUserById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        Expense expense = expenseService.getById(expenseId, user);
+        return ResponseEntity.ok(expense);
     }
 
-    @PutMapping("update/{id}")
-    public ResponseEntity<Expense> update(@PathVariable String id, @RequestBody Expense expenseDetail) {
-        try {
-            expenseDetail = expenseService.update(id, expenseDetail);
-            return new ResponseEntity<>(expenseDetail, HttpStatus.ACCEPTED);
-        } catch (ResourceNotFoundException e) {
-            // Handle resource not found exception
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<Expense>> getAllExpensesByUser(@PathVariable String userId) {
+        User user = userService.getUserById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        List<Expense> expenses = expenseService.getAllExpensesByUser(user);
+        return ResponseEntity.ok(expenses);
     }
 
-    @DeleteMapping("delete/{id}")
-    public ResponseEntity delete(@PathVariable String id) {
-        expenseService.delete(id);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    @PutMapping("/{expenseId}")
+    public ResponseEntity<Expense> updateExpense(@PathVariable String expenseId, @RequestBody Expense expenseDetail, @RequestParam String userId) {
+        User user = userService.getUserById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        Expense updatedExpense = expenseService.update(expenseId, expenseDetail, user);
+        return ResponseEntity.ok(updatedExpense);
     }
 
-    @GetMapping("/category")
-    public ResponseEntity<List<Expense>> getIncomesByCategory(@RequestParam String category) {
-        List<Expense> expenses = expenseService.getExpensesByCategory(category);
-        return new ResponseEntity<>(expenses, HttpStatus.OK);
+    @GetMapping("/category/{category}")
+    public ResponseEntity<List<Expense>> getExpensesByCategory(@PathVariable String category, @RequestParam String userId) {
+        User user = userService.getUserById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        List<Expense> expenses = expenseService.getExpensesByCategory(category, user);
+        return ResponseEntity.ok(expenses);
+    }
+
+    @DeleteMapping("/{expenseId}")
+    public ResponseEntity<Void> deleteExpense(@PathVariable String expenseId, @RequestParam String userId) {
+        User user = userService.getUserById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        expenseService.delete(expenseId, user);
+        return ResponseEntity.noContent().build();
     }
 }
 

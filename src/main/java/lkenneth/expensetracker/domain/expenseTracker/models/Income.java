@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.Date;
 
@@ -30,6 +31,9 @@ public class Income {
     private String category;
     @NonNull
     private String description;
+
+    @DBRef
+    private User user;
 
     @Override
     public String toString() {

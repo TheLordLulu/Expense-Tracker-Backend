@@ -4,6 +4,7 @@ import lkenneth.expensetracker.domain.core.exceptions.ResourceCreationException;
 import lkenneth.expensetracker.domain.core.exceptions.ResourceNotFoundException;
 import lkenneth.expensetracker.domain.expenseTracker.models.Income;
 
+import lkenneth.expensetracker.domain.expenseTracker.models.User;
 import lkenneth.expensetracker.domain.expenseTracker.repos.IncomeRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,14 +22,16 @@ public class IncomeServiceImpl implements IncomeService {
     }
 
     @Override
-    public Income create(Income income) throws ResourceCreationException {
+    public Income create(Income income, User user) throws ResourceCreationException {
+        income.setUser(user);
         return incomeRepo.save(income);
     }
 
+
     @Override
-    public Income getById(String id) throws ResourceNotFoundException {
-        Optional<Income> optionalIncome = incomeRepo.findById(id);
-        return optionalIncome.orElseThrow(() -> new ResourceNotFoundException("No income with id: " + id));
+    public Income getById(String incomeId, User user) throws ResourceNotFoundException  {
+        Optional<Income> optionalIncome = incomeRepo.findByIdAndUser(incomeId, user);
+        return optionalIncome.orElse(null);
     }
 
     @Override
@@ -37,8 +40,8 @@ public class IncomeServiceImpl implements IncomeService {
     }
 
     @Override
-    public Income update(String id, Income incomeDetail) throws ResourceNotFoundException {
-        Optional<Income> optionalIncome = incomeRepo.findById(id);
+    public Income update(String incomeId, Income incomeDetail, User user )  throws ResourceNotFoundException {
+        Optional<Income> optionalIncome = incomeRepo.findByIdAndUser(incomeId, user);
         if (optionalIncome.isPresent()) {
             Income existingIncome = optionalIncome.get();
             // Update existingIncome properties with incomeDetail properties
@@ -51,17 +54,27 @@ public class IncomeServiceImpl implements IncomeService {
 
             return incomeRepo.save(existingIncome);
         }
-        throw new ResourceNotFoundException("No income with id: " + id);
+        return null; // Handle not found or unauthorized access
     }
 
     @Override
-    public void delete(String id) {
-        incomeRepo.deleteById(id);
+    public void delete(String incomeId, User user) {
+        incomeRepo.deleteById(incomeId);
     }
 
     @Override
-    public List<Income> getIncomesByCategory(String category) {
-        return incomeRepo.findIncomesByCategory(category);
+    public List<Income> getIncomesByCategory(User user, String category) {
+        return incomeRepo.findByUserAndCategory(user, category);
+    }
+
+    @Override
+    public List<Income> getIncomesByCategory(String category, User user) {
+        return incomeRepo.findByUserAndCategory(user, category);
+    }
+
+    @Override
+    public List<Income> getAllIncomesByUser(User user) {
+        return incomeRepo.findByUser(user);
     }
 }
 

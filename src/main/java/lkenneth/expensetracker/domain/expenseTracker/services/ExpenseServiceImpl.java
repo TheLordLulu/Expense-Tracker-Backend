@@ -4,6 +4,8 @@ import lkenneth.expensetracker.domain.core.exceptions.ResourceCreationException;
 import lkenneth.expensetracker.domain.core.exceptions.ResourceNotFoundException;
 import lkenneth.expensetracker.domain.expenseTracker.models.Expense;
 
+import lkenneth.expensetracker.domain.expenseTracker.models.Income;
+import lkenneth.expensetracker.domain.expenseTracker.models.User;
 import lkenneth.expensetracker.domain.expenseTracker.repos.ExpenseRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,14 +23,15 @@ public class ExpenseServiceImpl implements ExpenseService {
     }
 
     @Override
-    public Expense create(Expense expense) throws ResourceCreationException {
+    public Expense create(Expense expense, User user) throws ResourceCreationException {
+        expense.setUser(user);
         return expenseRepo.save(expense);
     }
 
     @Override
-    public Expense getById(String id) throws ResourceNotFoundException {
-        Optional<Expense> optionalExpense = expenseRepo.findById(id);
-        return optionalExpense.orElseThrow(() -> new ResourceNotFoundException("No expense with id: " + id));
+    public Expense getById(String expenseId, User user) throws ResourceNotFoundException {
+        Optional<Expense> optionalExpense = expenseRepo.findByIdAndUser(expenseId, user);
+        return optionalExpense.orElse(null);
     }
 
     @Override
@@ -37,8 +40,8 @@ public class ExpenseServiceImpl implements ExpenseService {
     }
 
     @Override
-    public Expense update(String id, Expense expenseDetail) throws ResourceNotFoundException {
-        Optional<Expense> optionalExpense = expenseRepo.findById(id);
+    public Expense update(String expenseId, Expense expenseDetail, User user) throws ResourceNotFoundException {
+        Optional<Expense> optionalExpense = expenseRepo.findByIdAndUser(expenseId, user);
         if (optionalExpense.isPresent()) {
             Expense existingExpense = optionalExpense.get();
             // Update existingExpense properties with expenseDetail properties
@@ -51,17 +54,22 @@ public class ExpenseServiceImpl implements ExpenseService {
 
             return expenseRepo.save(existingExpense);
         }
-        throw new ResourceNotFoundException("No expense with id: " + id);
+        return null; // Handle not found or unauthorized access
     }
 
     @Override
-    public void delete(String id) {
-        expenseRepo.deleteById(id);
+    public void delete(String expenseId, User user) {
+        expenseRepo.deleteById(expenseId);
     }
 
     @Override
-    public List<Expense> getExpensesByCategory(String category) {
-        return expenseRepo.findExpensesByCategory(category);
+    public List<Expense> getExpensesByCategory(String category, User user) {
+        return expenseRepo.findByUserAndCategory(user, category);
+    }
+
+    @Override
+    public List<Expense> getAllExpensesByUser(User user) {
+        return expenseRepo.findByUser(user);
     }
 }
 
